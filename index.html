@@ -993,8 +993,9 @@
        
         cardHTML += `<div style="margin-top:8px; display:flex; gap:6px;">
             <button data-action="edit" data-index="${idx}">Edit</button>
-            <button data-action="delete" data-id="${entry.id}">Delete</button>
+            <button data-action="delete" data-index="${idx}" ${entry.id ? `data-id="${entry.id}"` : ''}>Delete</button>
           </div>`;
+
 
         card.innerHTML = cardHTML;
         container.appendChild(card);
@@ -1010,14 +1011,22 @@
       // Handle Delete
     const delBtn = e.target.closest('button[data-action="delete"]');
     if (delBtn) {
-      const rawId = delBtn.dataset.id;    // Firestore doc id string
-      if (!rawId) {
-        console.warn('Delete clicked but no data-id on button', delBtn);
-        return;
+      const idx = Number(delBtn.dataset.index);
+      if (!Number.isNaN(idx)) {
+        const entry = entries[idx];
+        // Remove locally
+        entries.splice(idx, 1);
+        localStorage.setItem('foodEntries', JSON.stringify(entries));
+        renderTable();
+
+        // Remove from Firestore if it has an id
+        if (entry.id) {
+          deleteDoc(doc(db, "foodEntries", entry.id)).catch(console.error);
+        }
       }
-      deleteEntryById(rawId);
-      return; // stop, don't also treat this click as edit
+      return;
     }
+
 
     // Handle Edit
     const editBtn = e.target.closest('button[data-action="edit"]');
