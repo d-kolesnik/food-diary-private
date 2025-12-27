@@ -1007,26 +1007,32 @@
 
     // Delegate edit/delete via buttons (use event delegation for robustness)    
   // Attach once (outside renderTable; or at the end of renderTable if you prefer)
-    groupsContainer.addEventListener('click', (e) => {
-      // Handle Delete
+  groupsContainer.addEventListener('click', (e) => {
     const delBtn = e.target.closest('button[data-action="delete"]');
     if (delBtn) {
       const idx = Number(delBtn.dataset.index);
       if (!Number.isNaN(idx)) {
         const entry = entries[idx];
-        // Remove locally
-        entries.splice(idx, 1);
-        localStorage.setItem('foodEntries', JSON.stringify(entries));
-        renderTable();
 
-        // Remove from Firestore if it has an id
+        // --- Remove from Firestore first ---
         if (entry.id) {
-          deleteDoc(doc(db, "foodEntries", entry.id)).catch(console.error);
+          deleteDoc(doc(db, "foodEntries", entry.id))
+            .then(() => {
+              // --- Remove locally only after backend confirms ---
+              entries.splice(idx, 1);
+              localStorage.setItem('foodEntries', JSON.stringify(entries));
+              renderTable();
+            })
+            .catch(console.error);
+        } else {
+          // If no Firestore ID, just remove locally
+          entries.splice(idx, 1);
+          localStorage.setItem('foodEntries', JSON.stringify(entries));
+          renderTable();
         }
       }
       return;
     }
-
 
     // Handle Edit
     const editBtn = e.target.closest('button[data-action="edit"]');
@@ -1038,7 +1044,7 @@
       }
       window.editEntry(idx);
     }
-    });
+  });
 
     // Ensure thumbnails are keyboard-focusable and rely on the delegated handlers
     groupsContainer.querySelectorAll('.photo-thumb').forEach(img => {
