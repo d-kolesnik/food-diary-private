@@ -1007,44 +1007,51 @@
 
     // Delegate edit/delete via buttons (use event delegation for robustness)    
   // Attach once (outside renderTable; or at the end of renderTable if you prefer)
-  groupsContainer.addEventListener('click', (e) => {
-    const delBtn = e.target.closest('button[data-action="delete"]');
-    if (delBtn) {
-      const idx = Number(delBtn.dataset.index);
-      if (!Number.isNaN(idx)) {
-        const entry = entries[idx];
+    groupsContainer.addEventListener('click', (e) => {
+      const delBtn = e.target.closest('button[data-action="delete"]');
+      if (delBtn) {
+        const entryId = delBtn.dataset.id; // <- use a data-id on the button, not index
 
-        // --- Remove from Firestore first ---
+        if (!entryId) return;
+
+        // Find entry in array by id
+        const entryIndex = entries.findIndex(e => e.id === entryId);
+        if (entryIndex === -1) return;
+
+        const entry = entries[entryIndex];
+
+        // Remove from Firestore first
         if (entry.id) {
           deleteDoc(doc(db, "foodEntries", entry.id))
             .then(() => {
-              // --- Remove locally only after backend confirms ---
-              entries.splice(idx, 1);
+              // Remove locally only after Firestore confirms
+              entries.splice(entryIndex, 1);
               localStorage.setItem('foodEntries', JSON.stringify(entries));
               renderTable();
             })
             .catch(console.error);
         } else {
-          // If no Firestore ID, just remove locally
-          entries.splice(idx, 1);
+          // If no id (local only), just remove
+          entries.splice(entryIndex, 1);
           localStorage.setItem('foodEntries', JSON.stringify(entries));
           renderTable();
         }
-      }
-      return;
-    }
 
-    // Handle Edit
-    const editBtn = e.target.closest('button[data-action="edit"]');
-    if (editBtn) {
-      const idx = Number(editBtn.dataset.index);
-      if (Number.isNaN(idx)) {
-        console.warn('Edit clicked with invalid index:', editBtn.dataset.index);
         return;
       }
-      window.editEntry(idx);
-    }
-  });
+
+      // Handle Edit
+      const editBtn = e.target.closest('button[data-action="edit"]');
+      if (editBtn) {
+        const idx = Number(editBtn.dataset.index);
+        if (Number.isNaN(idx)) {
+          console.warn('Edit clicked with invalid index:', editBtn.dataset.index);
+          return;
+        }
+        window.editEntry(idx);
+      }
+    });
+
 
     // Ensure thumbnails are keyboard-focusable and rely on the delegated handlers
     groupsContainer.querySelectorAll('.photo-thumb').forEach(img => {
