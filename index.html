@@ -1005,7 +1005,16 @@
       groupsContainer.appendChild(details);
     });
 
-    // Delegate edit/delete via buttons (use event delegation for robustness)    
+
+    // Ensure thumbnails are keyboard-focusable and rely on the delegated handlers
+    groupsContainer.querySelectorAll('.photo-thumb').forEach(img => {
+      img.style.pointerEvents = 'auto';
+      img.tabIndex = 0;
+    });
+  }
+
+
+      // Delegate edit/delete via buttons (use event delegation for robustness)    
   // Attach once (outside renderTable; or at the end of renderTable if you prefer)
     groupsContainer.addEventListener('click', (e) => {
       const delBtn = e.target.closest('button[data-action="delete"]');
@@ -1053,12 +1062,6 @@
     });
 
 
-    // Ensure thumbnails are keyboard-focusable and rely on the delegated handlers
-    groupsContainer.querySelectorAll('.photo-thumb').forEach(img => {
-      img.style.pointerEvents = 'auto';
-      img.tabIndex = 0;
-    });
-  }
 
   // Delegated handlers: robust fallback if individual listeners fail for any reason
   groupsContainer.addEventListener('click', function(e) {
